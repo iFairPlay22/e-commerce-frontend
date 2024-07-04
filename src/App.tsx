@@ -1,64 +1,35 @@
-import { useSelector } from '@xstate/react';
-import { createActor } from 'xstate';
-import fetchStateMachine from './machines/FetchStateMachine';
+import { Layout } from "./component/Layout/index.tsx";
+import { BasketView } from "./views/Basket"
+import { CatalogView } from "./views/Catalog"
+import { CommandsView } from "./views/Commands"
+import { RouterProvider, createBrowserRouter } from "react-router-dom"
+import 'reflect-metadata';
+import 'es6-shim';
 
-const fetchActor = createActor(
-  fetchStateMachine<string>(), {
-    input: {
-      fn: () => 
-        Promise.resolve(
-          (Math.random() < 0.3) ?
-          { statusCode: 200, content: 'Hello world!' } :
-          { statusCode: 500, content: 'Unknown error!' }
-        )   
-    }
-  }
-).start()
+const router = createBrowserRouter([
+  {
+    element: <Layout />,
+    children: [
+      {
+        path: "/",
+        element: <></>,
+      },
+      {
+        path: '/basket',
+        element: <BasketView />
+      },
+      {
+        path: '/catalog',
+        element: <CatalogView />,
+      },
+      {
+        path: '/past-commands',
+        element: <CommandsView />,
+      }
+    ],
+  },
+]);
 
-export const App = () => {
-
-  const state = useSelector(fetchActor, _ => _.value)
-  const context = useSelector(fetchActor, _ => _.context)
-
-  switch (state) {
-    case 'Idle':
-      return (
-        <button onClick={() => fetchActor.send({ type: 'Fetch' })}>
-          Fetch
-        </button>
-      );
-    case 'Loading':
-      return (
-        <p>Loading</p>
-      );
-    case 'Failure':
-      return (
-        <>
-          <p>
-            Operation failed {context.triesNb} times
-          </p>
-          <button onClick={() => fetchActor.send({ type: 'Retry' })}>
-            Retry
-          </button>
-        </>
-      )
-    case 'Success':
-      return (
-        <>
-          <p>
-            Operation succeeded after {context.triesNb} attempt{context.triesNb !== 0 ?? 's'}!
-          </p>
-          <p>
-            Result: {context.lastResponse?.content}
-          </p>
-          <button onClick={() => fetchActor.send({ type: 'Restart' })}>
-            Restart
-          </button>
-        </>
-      )
-    default:
-      return (
-        <p>Unknown state</p>
-      )
-  }
-}
+export const App = () => (
+  <RouterProvider router={router}/>
+)
